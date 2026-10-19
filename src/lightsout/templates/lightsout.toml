@@ -1,0 +1,58 @@
+# lights-out: what runs while you sleep.
+# Check it with `lightsout check`, try a job now with `lightsout run <name>`,
+# then `lightsout install` and go to bed.
+
+[night]
+window = "22:00-06:00"        # jobs only START inside this window (one already running may finish)
+report_at = "07:30"           # the morning report is written after this time
+nightly_budget_usd = 10       # stop starting jobs once tonight's reported cost passes this (0 = no cap)
+allowed_models = ["sonnet", "haiku"]   # a job asking for another model is a config error, not a surprise bill
+keep_awake = true             # macOS: keep the Mac awake while a job runs, and only then
+tick_minutes = 10             # how often the scheduler checks if something is due
+notify = true                 # one notification with the morning report
+# report_command = "~/bin/send-to-phone.sh"   # also runs with the report's path as $1
+# token_file = "~/.config/lights-out/token"   # optional: a `claude setup-token` token, chmod 600
+
+[guards]
+busy_processes = ["zoom.us", "obs", "Keynote"]   # never start a job while one of these runs
+# busy_command = "test -f ~/.do-not-disturb"     # your own check: exit 0 = you are busy
+user_idle_minutes = 15        # wait until the keyboard and mouse were idle this long (macOS; 0 = off)
+on_battery = "skip"           # "skip" or "allow"
+min_free_disk_gb = 5
+wait_for_network_s = 600      # after a wake from sleep Wi-Fi can take a minute to come back
+
+# ── jobs ─────────────────────────────────────────────────────────────────────────────────────────
+# schedule: "daily 23:00" | "weekly mon,thu 01:30" | "every 2h" | "every 45m" | "manual"
+# One of: prompt = "...", prompt_file = "prompts/x.md", command = "any shell command"
+
+[[job]]
+name = "hello"
+schedule = "daily 22:30"
+cwd = "~/lights-out-playground"
+model = "haiku"
+prompt = """
+Look at the files in this folder. Append to NIGHT-NOTES.md one dated line that says
+what you found and one idea to make the folder more useful. Keep it under 40 words.
+"""
+allowed_tools = ["Read", "Glob", "Write", "Edit"]
+permission_mode = "acceptEdits"
+timeout_minutes = 10
+
+# [[job]]
+# name = "fix-failing-tests"
+# schedule = "daily 23:00"
+# cwd = "~/code/my-app"
+# worktree = true              # works on its own branch lightsout/fix-failing-tests/<stamp>, never your checkout
+# model = "sonnet"
+# prompt_file = "prompts/fix-failing-tests.md"
+# allowed_tools = ["Read", "Edit", "Write", "Glob", "Grep", "Bash(npm test:*)", "Bash(git:*)"]
+# permission_mode = "acceptEdits"
+# max_budget_usd = 3
+# timeout_minutes = 60
+# priority = 1                 # lower runs first
+
+# [[job]]
+# name = "outdated-deps"
+# schedule = "weekly sun 01:00"
+# cwd = "~/code/my-app"
+# command = "npm outdated || true"
